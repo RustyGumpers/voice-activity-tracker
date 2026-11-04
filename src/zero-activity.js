@@ -6,7 +6,8 @@ const PAGE_SIZE = 20;
 const PERIOD_LABELS = {
   today: "Today",
   weekly: "This Week",
-  monthly: "This Month"
+  monthly: "This Month",
+  lifetime: "Lifetime"
 };
 
 function roleName(member, gumpRoleId, recruitRoleId) {
