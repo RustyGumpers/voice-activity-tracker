@@ -10,6 +10,7 @@ A standalone Discord bot that records member voice-channel time separately from 
 - Stores timestamped session segments in SQLite and splits totals at local calendar-day boundaries.
 - Daily, weekly, monthly, lifetime, and custom date-range reporting.
 - Server overview plus member reports and paginated session history.
+- Administrator-only Zero Voice Activity report for Gump and Recruit members, including members who have never joined voice; AFK time counts as activity.
 - Persistent dashboard message in a designated private admin channel; detail views are ephemeral.
 - Every command and component interaction independently checks administrator permission.
 - Recovers open voice segments after restart and reconciles current voice state on startup.
@@ -24,7 +25,7 @@ A standalone Discord bot that records member voice-channel time separately from 
 ## Setup
 
 1. Copy .env.example to .env and fill in the values.
-2. Set the server ID, AFK voice channel ID, private admin dashboard channel ID, and reporting timezone.
+2. Set the server ID, AFK voice channel ID, private admin dashboard channel ID, Gump role ID, Recruit role ID, and reporting timezone.
 3. Run npm install, then npm start.
 
 The bot registers guild slash commands on startup. Keep the dashboard channel private to administrators; the bot also denies non-administrator command and component interactions.
@@ -35,7 +36,7 @@ See .env.example. TIMEZONE must be a valid IANA timezone, for example America/Ne
 
 ## Reports
 
-The dashboard shows server-wide Voice Time and AFK Time for today, this week, this month, and lifetime. A reporting-period selector filters the member selector to members active in that period. The member report shows all four periods together, a weekly day-by-day breakdown, and recent sessions. Session History opens a paginated ephemeral history view.
+The dashboard shows server-wide Voice Time and AFK Time for today, this week, this month, and lifetime. Its Zero Voice Activity button privately lists Gump and Recruit members with no voice or AFK time in the selected day, week, or month; members with both roles appear once, and the list is paginated. A reporting-period selector filters the member selector to members active in that period. The member report shows all four periods together, a weekly day-by-day breakdown, and recent sessions. Session History opens a paginated ephemeral history view.
 
 ## Notes
 
