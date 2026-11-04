@@ -219,7 +219,9 @@ client.on(Events.InteractionCreate,async interaction=>{
     }
   }catch(error){
     console.error("Interaction failed:",error);
-    const message="Something went wrong while loading that report.";
+    const message=interaction.customId?.startsWith("zero")
+      ? `Could not load the Steam-link Gump/Recruit roster: ${error.message || "Unknown roster error."}`
+      : "Something went wrong while loading that report.";
     if(interaction.deferred||interaction.replied)await interaction.followUp({content:message,ephemeral:true}).catch(()=>{});
     else if(interaction.isRepliable())await interaction.reply({content:message,ephemeral:true}).catch(()=>{});
   }
