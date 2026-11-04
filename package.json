@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "check": "node --check src/index.js && node --check src/database.js && node --check src/tracker.js && node --check src/reports.js"
+    "check": "node --check src/index.js && node --check src/database.js && node --check src/tracker.js && node --check src/reports.js && node --check src/zero-activity.js"
   },
   "engines": {
     "node": ">=20"
