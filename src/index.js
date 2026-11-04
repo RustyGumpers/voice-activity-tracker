@@ -7,8 +7,9 @@ const {
 const store = require("./database");
 const tracker = require("./tracker");
 const reports = require("./reports");
+const zeroActivity = require("./zero-activity");
 
-const required=["DISCORD_TOKEN","CLIENT_ID","GUILD_ID","AFK_CHANNEL_ID","ADMIN_CHANNEL_ID"];
+const required=["DISCORD_TOKEN","CLIENT_ID","GUILD_ID","AFK_CHANNEL_ID","ADMIN_CHANNEL_ID","GUMP_ROLE_ID","RECRUIT_ROLE_ID"];
 const missing=required.filter(k=>!process.env[k]);
 if(missing.length){console.error("Missing environment variables:",missing.join(", "));process.exit(1);}
 
@@ -59,6 +60,9 @@ function dashboardComponents(period="weekly",page=0){
       new ButtonBuilder().setCustomId(`dash:page:${period}:${Math.min(maxPage,page+1)}`).setLabel("Next").setStyle(ButtonStyle.Secondary).setDisabled(page===maxPage)
     ));
   }
+  rows.push(new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`zero-open:${period}`).setLabel("Zero Voice Activity").setStyle(ButtonStyle.Danger)
+  ));
   return rows;
 }
 
@@ -172,6 +176,16 @@ client.on(Events.InteractionCreate,async interaction=>{
       }
     }
     if(interaction.isButton()){
+      if(interaction.customId.startsWith("zero-open:")){
+        const period=interaction.customId.split(":")[1];
+        const payload=await zeroActivity.buildReport(interaction.guild,period,0);
+        return interaction.reply({...payload,ephemeral:true});
+      }
+      if(interaction.customId.startsWith("zero:")){
+        const [,period,page]=interaction.customId.split(":");
+        const payload=await zeroActivity.buildReport(interaction.guild,period,Number(page));
+        return interaction.update(payload);
+      }
       if(interaction.customId.startsWith("dash:page:")){
         const [, ,period,page]=interaction.customId.split(":");
         return interaction.update({embeds:[dashboardEmbed(period)],components:dashboardComponents(period,Number(page))});
