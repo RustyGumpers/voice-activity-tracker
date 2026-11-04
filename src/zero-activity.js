@@ -96,11 +96,6 @@ async function buildReport(guild, period, requestedPage = 0) {
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(page === 0),
       new ButtonBuilder()
-        .setCustomId(`zero:${period}:${page + 1}`)
-        .setLabel(`Page ${page + 1}/${pageCount}`)
-        .setStyle(ButtonStyle.Secondary)
-        .setDisabled(true),
-      new ButtonBuilder()
         .setCustomId(`zero:${period}:${Math.min(pageCount - 1, page + 1)}`)
         .setLabel("Next")
         .setStyle(ButtonStyle.Secondary)
