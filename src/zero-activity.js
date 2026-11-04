@@ -10,28 +10,50 @@ const PERIOD_LABELS = {
   lifetime: "Lifetime"
 };
 
-function roleName(member, gumpRoleId, recruitRoleId) {
-  const roles = [];
-  if (member.roles.cache.has(gumpRoleId)) roles.push("Gump");
-  if (member.roles.cache.has(recruitRoleId)) roles.push("Recruit");
-  return roles.join(" / ");
+async function fetchSteamLinkRoster() {
+  const endpoint = process.env.STEAM_LINK_ROSTER_URL ||
+    "https://steam-link-production.up.railway.app/internal/roster";
+  const token = process.env.STEAM_LINK_ROSTER_TOKEN || "";
+
+  if (!/^https:\/\//i.test(endpoint)) {
+    throw new Error("STEAM_LINK_ROSTER_URL must be an HTTPS URL.");
+  }
+  if (!/^[a-f0-9]{64}$/i.test(token)) {
+    throw new Error("STEAM_LINK_ROSTER_TOKEN must be configured as a 64-character hexadecimal token.");
+  }
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    signal: AbortSignal.timeout(10000)
+  });
+
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(`Steam-link roster endpoint returned invalid JSON (HTTP ${response.status}).`);
+  }
+
+  if (!response.ok || data?.ok !== true || data?.complete !== true || !Array.isArray(data.members)) {
+    throw new Error(data?.error || `Steam-link roster is unavailable (HTTP ${response.status}).`);
+  }
+
+  return data.members.filter(member =>
+    member && /^[0-9]{17,20}$/.test(String(member.id || "")) &&
+    typeof member.displayName === "string" &&
+    typeof member.username === "string" &&
+    typeof member.role === "string" &&
+    member.role.length > 0
+  );
 }
 
 async function buildReport(guild, period, requestedPage = 0) {
   if (!PERIOD_LABELS[period]) throw new Error("Unsupported zero-activity reporting period.");
 
-  const gumpRoleId = process.env.GUMP_ROLE_ID;
-  const recruitRoleId = process.env.RECRUIT_ROLE_ID;
-  if (!gumpRoleId || !recruitRoleId) {
-    throw new Error("GUMP_ROLE_ID and RECRUIT_ROLE_ID must be configured.");
-  }
-
-  // Fetch the full member roster so members who have never joined voice are included.
-  const fetchedMembers = await guild.members.fetch();
-  const eligible = [...fetchedMembers.values()].filter(member =>
-    !member.user.bot &&
-    (member.roles.cache.has(gumpRoleId) || member.roles.cache.has(recruitRoleId))
-  );
+  // Reuse Steam-link's existing complete Gump/Recruit roster. This endpoint
+  // serves the bot's cached roster and does not trigger another Discord fetch.
+  const eligible = await fetchSteamLinkRoster();
 
   // One aggregate query checks both regular voice and AFK segments for the selected period.
   const range = reports.ranges()[period];
@@ -44,9 +66,9 @@ async function buildReport(guild, period, requestedPage = 0) {
   const activeIds = new Set(activeRows.map(row => row.user_id));
   // AFK time is included: any voice or AFK time means the member is not at zero.
   const inactive = eligible.filter(member => !activeIds.has(member.id)).map(member => ({
-    displayName: member.displayName || member.user.globalName || member.user.username,
-    username: member.user.username,
-    role: roleName(member, gumpRoleId, recruitRoleId)
+    displayName: member.displayName,
+    username: member.username,
+    role: member.role
   })).sort((a, b) => a.displayName.localeCompare(b.displayName));
 
   const pageCount = Math.max(1, Math.ceil(inactive.length / PAGE_SIZE));
