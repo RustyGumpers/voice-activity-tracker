@@ -18,6 +18,13 @@ const client=new Client({intents:[
   GatewayIntentBits.GuildMembers,
   GatewayIntentBits.GuildVoiceStates
 ]});
+
+// Keep Discord client errors from becoming unhandled EventEmitter errors that
+// terminate the process. Interaction failures are also handled in the
+// interactionCreate try/catch below.
+client.on("error",error=>{
+  console.error("Discord client error:",error);
+});
 const PERIODS=[
   {label:"Today",value:"today"},
   {label:"This Week",value:"weekly"},
