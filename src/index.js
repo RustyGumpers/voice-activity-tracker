@@ -178,13 +178,17 @@ client.on(Events.InteractionCreate,async interaction=>{
     if(interaction.isButton()){
       if(interaction.customId.startsWith("zero-open:")){
         const period=interaction.customId.split(":")[1];
+        // Acknowledge immediately; fetching the complete guild roster can take longer than Discord's 3-second limit.
+        await interaction.deferReply({ephemeral:true});
         const payload=await zeroActivity.buildReport(interaction.guild,period,0);
-        return interaction.reply({...payload,ephemeral:true});
+        return interaction.editReply(payload);
       }
       if(interaction.customId.startsWith("zero:")){
         const [,period,page]=interaction.customId.split(":");
+        // Acknowledge the component before the roster fetch, then update the ephemeral report.
+        await interaction.deferUpdate();
         const payload=await zeroActivity.buildReport(interaction.guild,period,Number(page));
-        return interaction.update(payload);
+        return interaction.editReply(payload);
       }
       if(interaction.customId.startsWith("dash:page:")){
         const [, ,period,page]=interaction.customId.split(":");
