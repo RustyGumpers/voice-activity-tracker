@@ -10,7 +10,7 @@ A standalone Discord bot that records member voice-channel time separately from 
 - Stores timestamped session segments in SQLite and splits totals at local calendar-day boundaries.
 - Daily, weekly, monthly, lifetime, and custom date-range reporting.
 - Server overview plus member reports and paginated session history.
-- Administrator-only Zero Voice Activity report for Gump and Recruit members, including members who have never joined voice; AFK time counts as activity.
+- Administrator-only Zero Voice Activity report for Gump and Recruit members, including members who have never joined voice; AFK time counts as activity. The report reuses the authenticated roster endpoint from the Steam-link bot rather than fetching the Discord member list itself.
 - Persistent dashboard message in a designated private admin channel; detail views are ephemeral.
 - Every command and component interaction independently checks administrator permission.
 - Recovers open voice segments after restart and reconciles current voice state on startup.
@@ -25,7 +25,7 @@ A standalone Discord bot that records member voice-channel time separately from 
 ## Setup
 
 1. Copy .env.example to .env and fill in the values.
-2. Set the server ID, AFK voice channel ID, private admin dashboard channel ID, Gump role ID, Recruit role ID, and reporting timezone.
+2. Set the server ID, AFK voice channel ID, private admin dashboard channel ID, Gump role ID, Recruit role ID, and reporting timezone. Configure `STEAM_LINK_ROSTER_URL` and `STEAM_LINK_ROSTER_TOKEN` to connect to the Steam-link bot's authenticated Gump/Recruit roster endpoint. The token must match `STEAM_LINK_ROSTER_TOKEN` on the Steam-link bot.
 3. Run npm install, then npm start.
 
 The bot registers guild slash commands on startup. Keep the dashboard channel private to administrators; the bot also denies non-administrator command and component interactions.
@@ -42,5 +42,6 @@ The dashboard shows server-wide Voice Time and AFK Time for today, this week, th
 
 - Voice Time means time connected to any non-AFK voice channel. AFK Time means time connected to the configured AFK channel.
 - The bot does not track Discord online presence, mute/deafen state, speaking, streaming, or individual regular-channel usage.
+- Zero Voice Activity depends on the Steam-link bot being online with a complete member cache. If its roster is incomplete or unavailable, the report displays an error instead of silently omitting members.
 - SQLite data is stored at DATABASE_PATH (default ./data/voice-activity.sqlite). Persist this directory on your host (for example, a Railway volume) to retain history across deployments.
 - This first version is configured for one guild/database.
