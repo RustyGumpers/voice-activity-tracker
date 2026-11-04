@@ -1,5 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const reports = require("./reports");
+const { db } = require("./database");
 
 const PAGE_SIZE = 20;
 const PERIOD_LABELS = {
@@ -31,11 +32,17 @@ async function buildReport(guild, period, requestedPage = 0) {
     (member.roles.cache.has(gumpRoleId) || member.roles.cache.has(recruitRoleId))
   );
 
+  // One aggregate query checks both regular voice and AFK segments for the selected period.
+  const range = reports.ranges()[period];
+  const activeRows = db.prepare(`SELECT user_id,
+    SUM(MAX(0, MIN(COALESCE(ended_at, ?), ?) - MAX(started_at, ?))) AS total_ms
+    FROM voice_segments
+    WHERE started_at < ? AND COALESCE(ended_at, ?) > ?
+    GROUP BY user_id HAVING total_ms > 0`)
+    .all(range.end, range.end, range.start, range.end, range.end, range.start);
+  const activeIds = new Set(activeRows.map(row => row.user_id));
   // AFK time is included: any voice or AFK time means the member is not at zero.
-  const inactive = eligible.filter(member => {
-    const totals = reports.memberPeriods(member.id)[period];
-    return totals.voice + totals.afk === 0;
-  }).map(member => ({
+  const inactive = eligible.filter(member => !activeIds.has(member.id)).map(member => ({
     displayName: member.displayName || member.user.globalName || member.user.username,
     username: member.user.username,
     role: roleName(member, gumpRoleId, recruitRoleId)
