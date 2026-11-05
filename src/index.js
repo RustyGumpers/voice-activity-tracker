@@ -63,7 +63,7 @@ function dashboardComponents(period="weekly",page=0){
   if(maxPage>0){
     rows.push(new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId(`dash:page:${period}:${Math.max(0,page-1)}`).setLabel("Previous").setStyle(ButtonStyle.Secondary).setDisabled(page===0),
-      new ButtonBuilder().setCustomId(`dash:page:${period}:${Math.min(maxPage,page+1)}`).setLabel(`Page ${page+1}/${maxPage+1}`).setStyle(ButtonStyle.Secondary).setDisabled(true),
+      new ButtonBuilder().setCustomId(`dash:page-indicator:${period}:${page}`).setLabel(`Page ${page+1}/${maxPage+1}`).setStyle(ButtonStyle.Secondary).setDisabled(true),
       new ButtonBuilder().setCustomId(`dash:page:${period}:${Math.min(maxPage,page+1)}`).setLabel("Next").setStyle(ButtonStyle.Secondary).setDisabled(page===maxPage)
     ));
   }
@@ -185,14 +185,12 @@ client.on(Events.InteractionCreate,async interaction=>{
     if(interaction.isButton()){
       if(interaction.customId.startsWith("zero-open:")){
         const period=interaction.customId.split(":")[1];
-        // Acknowledge immediately; fetching the complete guild roster can take longer than Discord's 3-second limit.
         await interaction.deferReply({ephemeral:true});
         const payload=await zeroActivity.buildReport(interaction.guild,period,0);
         return interaction.editReply(payload);
       }
       if(interaction.customId.startsWith("zero:")){
         const [,period,page]=interaction.customId.split(":");
-        // Acknowledge the component before the roster fetch, then update the ephemeral report.
         await interaction.deferUpdate();
         const payload=await zeroActivity.buildReport(interaction.guild,period,Number(page));
         return interaction.editReply(payload);
